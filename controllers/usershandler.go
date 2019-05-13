@@ -66,6 +66,10 @@ var GetUserHandler = func(w http.ResponseWriter, r *http.Request) {
 
 	result := models.GetOneUser(id)
 
+	if exist, statusCode := utils.GetStatusCode(result, utils.ErrorMessage{}); exist && statusCode != 0 {
+		w.WriteHeader(statusCode)
+	}
+
 	w.Header().Add("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(result)
 }

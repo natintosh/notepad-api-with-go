@@ -66,8 +66,12 @@ var GetOneUser = func(userID string) interface{} {
 	db := database.GetDb()
 	defer db.Close()
 
+	errobj := make(map[string]interface{})
+	errmessage := make([]string, 0)
+
 	if err := db.Ping(); err != nil {
-		panic(err)
+		log.Println(err, err.Error())
+		errmessage = append(errmessage, "Failed to connect to the database")
 	}
 
 	sqlStatement := `SELECT * FROM users WHERE user_id = $1`
@@ -78,21 +82,22 @@ var GetOneUser = func(userID string) interface{} {
 
 	err := db.QueryRow(sqlStatement, userID).Scan(&id, &username, &email)
 
-	var result map[string]interface{} = make(map[string]interface{})
-	var user map[string]interface{} = make(map[string]interface{})
-
-	user["id"] = id
-	user["username"] = username
-	user["email"] = email
-
-	switch {
-	case err == nil:
-		result["result"] = "success"
-	default:
-		result["result"] = "error"
+	if err != nil {
+		log.Println(err, err.Error())
+		errmessage = append(errmessage, "User not found")
 	}
 
-	result["user"] = user
+	var result interface{}
+
+	switch {
+	case len(errmessage) == 0:
+		data := User{ID: id, Username: username, Email: email}
+		result = utils.SuccessMessage{Result: "Success", Data: data}
+	default:
+		errobj["code"] = 404
+		errobj["message"] = errmessage
+		result = utils.ErrorMessage{Result: "error", Error: errobj}
+	}
 
 	return result
 }
