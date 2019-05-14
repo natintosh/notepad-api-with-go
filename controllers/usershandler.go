@@ -38,10 +38,11 @@ var PostUserHandler = func(w http.ResponseWriter, r *http.Request) {
 		default:
 			user.Password = string(encripted)
 			result := models.AddNewUser(user)
+
+			w.Header().Add("Content-Type", "application/json")
 			if exist, statusCode := utils.GetStatusCode(result, utils.ErrorMessage{}); exist && statusCode != 0 {
 				w.WriteHeader(statusCode)
 			}
-			w.Header().Add("Content-Type", "application/json")
 			json.NewEncoder(w).Encode(result)
 		}
 	}
@@ -51,11 +52,10 @@ var PostUserHandler = func(w http.ResponseWriter, r *http.Request) {
 var GetAllUsersHandler = func(w http.ResponseWriter, r *http.Request) {
 	result := models.GetAllUsers()
 
+	w.Header().Add("Content-Type", "application/json")
 	if exist, statusCode := utils.GetStatusCode(result, utils.ErrorMessage{}); exist && statusCode != 0 {
 		w.WriteHeader(statusCode)
 	}
-
-	w.Header().Add("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(result)
 }
 
@@ -66,11 +66,10 @@ var GetUserHandler = func(w http.ResponseWriter, r *http.Request) {
 
 	result := models.GetOneUser(id)
 
+	w.Header().Add("Content-Type", "application/json")
 	if exist, statusCode := utils.GetStatusCode(result, utils.ErrorMessage{}); exist && statusCode != 0 {
 		w.WriteHeader(statusCode)
 	}
-
-	w.Header().Add("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(result)
 }
 
@@ -79,21 +78,35 @@ var DeleteUserHandler = func(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id := vars["id"]
 	decoder := json.NewDecoder(r.Body)
-	var getUser models.User
-	err := decoder.Decode(&getUser)
-	if err != nil {
-		panic(err)
+	var user models.User
+	err := decoder.Decode(&user)
+	statusCode := 0
+	switch {
+	case err != nil:
+		log.Println(err, err.Error())
+		statusCode = 500
+		w.WriteHeader(statusCode)
+	case id == user.ID:
+		result := models.DeleteUser(user)
+
+		w.Header().Add("Content-Type", "application/json")
+		if exist, statusCode := utils.GetStatusCode(result, utils.ErrorMessage{}); exist && statusCode != 0 {
+			w.WriteHeader(statusCode)
+		}
+		json.NewEncoder(w).Encode(result)
+	default:
+		statusCode = 500
+		var result interface{}
+		errmessage := make([]string, 0)
+		errobj := make(map[string]interface{})
+		errmessage = append(errmessage, "Unable to delete user", "User ID don't match")
+		errobj["code"] = statusCode
+		errobj["message"] = errmessage
+		result = utils.ErrorMessage{Result: "error", Error: errobj}
+		w.Header().Add("Content-Type", "application/json")
+		w.WriteHeader(statusCode)
+		json.NewEncoder(w).Encode(result)
 	}
-
-	var result map[string]interface{} = models.DeleteUser(getUser).(map[string]interface{})
-
-	if id != result["id"] {
-		result["result"] = "error"
-	}
-
-	w.Header().Add("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(result)
-
 }
 
 // UpdateUserPasswordHandler :
@@ -101,24 +114,43 @@ var UpdateUserPasswordHandler = func(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id := vars["id"]
 	decoder := json.NewDecoder(r.Body)
-	var getUser models.User
-	err := decoder.Decode(&getUser)
-	if err != nil {
-		panic(err)
-	}
-	bytepassword := []byte(getUser.Password)
-	encripted, err := bcrypt.GenerateFromPassword(bytepassword, bcrypt.DefaultCost)
-	if err != nil {
-		panic(err)
-	}
-	getUser.Password = string(encripted)
+	var user models.User
+	err := decoder.Decode(&user)
+	statusCode := 0
+	switch {
+	case err != nil:
+		log.Println(err, err.Error())
+		statusCode = 500
+		w.WriteHeader(statusCode)
+	case id == user.ID:
+		bytepassword := []byte(user.Password)
+		encripted, err := bcrypt.GenerateFromPassword(bytepassword, bcrypt.DefaultCost)
+		switch {
+		case err != nil:
+			log.Println(err, err.Error())
+			statusCode = 500
+			w.WriteHeader(statusCode)
+		default:
+			user.Password = string(encripted)
+			result := models.UpdateUserPassword(user)
 
-	var result map[string]interface{} = models.UpdateUserPassword(getUser).(map[string]interface{})
-
-	if id != result["id"] {
-		result["result"] = "error"
+			w.Header().Add("Content-Type", "application/json")
+			if exist, statusCode := utils.GetStatusCode(result, utils.ErrorMessage{}); exist && statusCode != 0 {
+				w.WriteHeader(statusCode)
+			}
+			json.NewEncoder(w).Encode(result)
+		}
+	default:
+		statusCode = 500
+		var result interface{}
+		errmessage := make([]string, 0)
+		errobj := make(map[string]interface{})
+		errmessage = append(errmessage, "Unable to change password", "User ID don't match")
+		errobj["code"] = statusCode
+		errobj["message"] = errmessage
+		result = utils.ErrorMessage{Result: "error", Error: errobj}
+		w.Header().Add("Content-Type", "application/json")
+		w.WriteHeader(statusCode)
+		json.NewEncoder(w).Encode(result)
 	}
-
-	w.Header().Add("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(result)
 }

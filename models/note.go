@@ -127,7 +127,7 @@ var GetOneNote = func(noteID string) interface{} {
 	switch {
 	case len(errmessage) == 0:
 		data := Note{ID: id, UserID: userID, Note: note, CreatedOn: createdOn}
-		result = utils.SuccessMessage{Result: "Success", Data: data}
+		result = utils.SuccessMessage{Result: "success", Data: data}
 
 	default:
 		errobj["code"] = 404
@@ -185,7 +185,7 @@ var GetAllNotes = func() interface{} {
 	switch {
 	case len(errmessage) == 0:
 		data := notes
-		result = utils.SuccessMessage{Result: "Success", Data: data}
+		result = utils.SuccessMessage{Result: "success", Data: data}
 
 	default:
 		errobj["code"] = 500
@@ -232,7 +232,7 @@ var DeleteNote = func(noteID string) interface{} {
 	case len(errmessage) == 0:
 		data := make(map[string]interface{})
 		data["id"] = noteID
-		result = utils.SuccessMessage{Result: "Success", Data: data}
+		result = utils.SuccessMessage{Result: "success", Data: data}
 
 	default:
 		errobj["code"] = 404

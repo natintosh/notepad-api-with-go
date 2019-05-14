@@ -92,7 +92,7 @@ var GetOneUser = func(userID string) interface{} {
 	switch {
 	case len(errmessage) == 0:
 		data := User{ID: id, Username: username, Email: email}
-		result = utils.SuccessMessage{Result: "Success", Data: data}
+		result = utils.SuccessMessage{Result: "success", Data: data}
 	default:
 		errobj["code"] = 404
 		errobj["message"] = errmessage
@@ -149,7 +149,7 @@ var GetAllUsers = func() interface{} {
 	switch {
 	case len(errmessage) == 0:
 		data := users
-		result = utils.SuccessMessage{Result: "Success", Data: data}
+		result = utils.SuccessMessage{Result: "success", Data: data}
 	default:
 		errobj["code"] = 500
 		errobj["message"] = errmessage
@@ -164,27 +164,33 @@ var UpdateUserPassword = func(user User) interface{} {
 	db := database.GetDb()
 	defer db.Close()
 
+	errobj := make(map[string]interface{})
+	errmessage := make([]string, 0)
 	if err := db.Ping(); err != nil {
-		panic(err)
+		log.Println(err, err.Error())
+		errmessage = append(errmessage, "Failed to connect to database", err.Error())
 	}
 
 	sqlStatement := `UPDATE userspassphrase SET hash_passphrase = $2 WHERE user_id = $1 RETURNING user_id`
 	var id string
 	err := db.QueryRow(sqlStatement, user.ID, user.Password).Scan(&id)
 
-	var result map[string]interface{} = make(map[string]interface{})
-
 	if err != nil {
-		panic(err)
+		log.Println(err, err.Error())
+		errmessage = append(errmessage, "Unable to change password", err.Error())
 	}
+
+	var result interface{}
 
 	switch {
-	case err == nil:
-		result["result"] = "success"
+	case len(errmessage) == 0:
+		data := User{ID: id}
+		result = utils.SuccessMessage{Result: "success", Data: data}
 	default:
-		result["result"] = "error"
+		errobj["code"] = 500
+		errobj["message"] = errmessage
+		result = utils.ErrorMessage{Result: "error", Error: errobj}
 	}
-	result["id"] = id
 
 	return result
 }
@@ -194,37 +200,42 @@ var DeleteUser = func(user User) interface{} {
 	db := database.GetDb()
 	defer db.Close()
 
+	errobj := make(map[string]interface{})
+	errmessage := make([]string, 0)
 	if err := db.Ping(); err != nil {
-		panic(err)
+		log.Println(err.Error())
+		errmessage = append(errmessage, "Failed to connect to connect to database", err.Error())
 	}
 
 	sqlStatement := `DELETE FROM users WHERE user_id = $1`
 
-	_, err := db.Exec(sqlStatement, user.ID)
+	res, _ := db.Exec(sqlStatement, user.ID)
+	count, _ := res.RowsAffected()
 
-	var result map[string]interface{} = make(map[string]interface{})
-	if err != nil {
-		panic(err)
-	}
 	switch {
-	case err == nil:
-		result["result"] = "success"
+	case count != 1:
+		errmessage = append(errmessage, "Unable to delete user")
 	default:
-		result["result"] = "error"
-	}
-	sqlStatement = `DELETE FROM userspassphrase WHERE user_id = $1`
+		sqlStatement = `DELETE FROM userspassphrase WHERE user_id = $1`
 
-	_, err = db.Exec(sqlStatement, user.ID)
-	if err != nil {
-		panic(err)
+		res, _ = db.Exec(sqlStatement, user.ID)
+		count, _ := res.RowsAffected()
+		if count != 1 {
+			errmessage = append(errmessage, "Unable to delete user")
+		}
 	}
+
+	var result interface{}
+
 	switch {
-	case err == nil:
-		result["result"] = "success"
+	case len(errmessage) == 0:
+		data := User{ID: user.ID}
+		result = utils.SuccessMessage{Result: "success", Data: data}
 	default:
-		result["result"] = "error"
+		errobj["code"] = 500
+		errobj["message"] = errmessage
+		result = utils.ErrorMessage{Result: "error", Error: errobj}
 	}
 
-	result["id"] = user.ID
 	return result
 }

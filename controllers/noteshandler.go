@@ -17,11 +17,10 @@ var GetNoteHandler = func(w http.ResponseWriter, r *http.Request) {
 
 	result := models.GetOneNote(id)
 
+	w.Header().Add("Content-Type", "application/json")
 	if exist, statusCode := utils.GetStatusCode(result, utils.ErrorMessage{}); exist && statusCode != 0 {
 		w.WriteHeader(statusCode)
 	}
-
-	w.Header().Add("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(result)
 
 }
@@ -30,11 +29,10 @@ var GetNoteHandler = func(w http.ResponseWriter, r *http.Request) {
 var GetAllNotesHandler = func(w http.ResponseWriter, r *http.Request) {
 	result := models.GetAllNotes()
 
+	w.Header().Add("Content-Type", "application/json")
 	if exist, statusCode := utils.GetStatusCode(result, utils.ErrorMessage{}); exist && statusCode != 0 {
 		w.WriteHeader(statusCode)
 	}
-
-	w.Header().Add("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(result)
 }
 
@@ -52,10 +50,10 @@ var PostNoteHandler = func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(statusCode)
 	default:
 		result := models.AddNewNote(note)
+		w.Header().Add("Content-Type", "application/json")
 		if exist, statusCode := utils.GetStatusCode(result, utils.ErrorMessage{}); exist && statusCode != 0 {
 			w.WriteHeader(statusCode)
 		}
-		w.Header().Add("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(result)
 
 	}
@@ -75,10 +73,10 @@ var UpdateNoteHandler = func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(statusCode)
 	default:
 		result := models.UpdateNote(note)
+		w.Header().Add("Content-Type", "application/json")
 		if exist, statusCode := utils.GetStatusCode(result, utils.ErrorMessage{}); exist && statusCode != 0 {
 			w.WriteHeader(statusCode)
 		}
-		w.Header().Add("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(result)
 
 	}
@@ -91,10 +89,9 @@ var DeleteNoteHandler = func(w http.ResponseWriter, r *http.Request) {
 
 	result := models.DeleteNote(id)
 
+	w.Header().Add("Content-Type", "application/json")
 	if exist, statusCode := utils.GetStatusCode(result, utils.ErrorMessage{}); exist && statusCode != 0 {
 		w.WriteHeader(statusCode)
 	}
-
-	w.Header().Add("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(result)
 }
