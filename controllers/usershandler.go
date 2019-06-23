@@ -28,8 +28,8 @@ var PostUserHandler = func(w http.ResponseWriter, r *http.Request) {
 	default:
 		gxid := xid.New().String()
 		user.ID = gxid
-		bytepassword := []byte(user.Password)
-		encripted, err := bcrypt.GenerateFromPassword(bytepassword, bcrypt.DefaultCost)
+		bytePassword := []byte(user.Password)
+		encripted, err := bcrypt.GenerateFromPassword(bytePassword, bcrypt.DefaultCost)
 		switch {
 		case err != nil:
 			log.Println(err, err.Error())
@@ -97,12 +97,12 @@ var DeleteUserHandler = func(w http.ResponseWriter, r *http.Request) {
 	default:
 		statusCode = 500
 		var result interface{}
-		errmessage := make([]string, 0)
-		errobj := make(map[string]interface{})
-		errmessage = append(errmessage, "Unable to delete user", "User ID don't match")
-		errobj["code"] = statusCode
-		errobj["message"] = errmessage
-		result = utils.ErrorMessage{Result: "error", Error: errobj}
+		errMessage := make([]string, 0)
+		errObj := make(map[string]interface{})
+		errMessage = append(errMessage, "Unable to delete user", "User ID don't match")
+		errObj["code"] = statusCode
+		errObj["message"] = errMessage
+		result = utils.ErrorMessage{Result: "error", Error: errObj}
 		w.Header().Add("Content-Type", "application/json")
 		w.WriteHeader(statusCode)
 		json.NewEncoder(w).Encode(result)
@@ -123,8 +123,8 @@ var UpdateUserPasswordHandler = func(w http.ResponseWriter, r *http.Request) {
 		statusCode = 500
 		w.WriteHeader(statusCode)
 	case id == user.ID:
-		bytepassword := []byte(user.Password)
-		encripted, err := bcrypt.GenerateFromPassword(bytepassword, bcrypt.DefaultCost)
+		bytePassword := []byte(user.Password)
+		encripted, err := bcrypt.GenerateFromPassword(bytePassword, bcrypt.DefaultCost)
 		switch {
 		case err != nil:
 			log.Println(err, err.Error())
@@ -143,12 +143,12 @@ var UpdateUserPasswordHandler = func(w http.ResponseWriter, r *http.Request) {
 	default:
 		statusCode = 500
 		var result interface{}
-		errmessage := make([]string, 0)
-		errobj := make(map[string]interface{})
-		errmessage = append(errmessage, "Unable to change password", "User ID don't match")
-		errobj["code"] = statusCode
-		errobj["message"] = errmessage
-		result = utils.ErrorMessage{Result: "error", Error: errobj}
+		errMessage := make([]string, 0)
+		errObj := make(map[string]interface{})
+		errMessage = append(errMessage, "Unable to change password", "User ID don't match")
+		errObj["code"] = statusCode
+		errObj["message"] = errMessage
+		result = utils.ErrorMessage{Result: "error", Error: errObj}
 		w.Header().Add("Content-Type", "application/json")
 		w.WriteHeader(statusCode)
 		json.NewEncoder(w).Encode(result)
