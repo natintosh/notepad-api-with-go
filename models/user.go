@@ -15,6 +15,47 @@ type User struct {
 	Password string `json:"password,omitempty"`
 }
 
+// LogUserIn :
+var LogUserIn = func(user User) bool {
+	db := database.GetDb()
+	defer db.Close()
+
+	errObj := make(map[string]interface{})
+	errMessage := make([]string, 0)
+
+	if err := db.Ping(); err != nil {
+		log.Println(err, err.Error())
+		errMessage = append(errMessage, "Failed to connect to database")
+	}
+
+	sqlStatement := `SELECT user_id FROM users WHERE username = $1`
+
+	var id string
+	var hashPassPhrase string
+
+	err := db.QueryRow(sqlStatement, user.Username).Scan(&id)
+
+	if err != nil {
+		log.Println(err, err.Error())
+		errMessage = append(errMessage, "User not found")
+	}
+
+	sqlStatement = `SELECT hash_passphrase FROM userspassphrase WHERE user_id = $1`
+
+	err = db.QueryRow(sqlStatement, id).Scan(&hashPassPhrase)
+
+	var doesExist bool = false
+
+	if len(errMessage) == 0 {
+		doesExist = true
+	} else {
+		errObj["code"] = 500
+		errObj["message"] = errMessage
+	}
+
+	return doesExist
+}
+
 // AddNewUser :
 var AddNewUser = func(user User) interface{} {
 	db := database.GetDb()
@@ -34,7 +75,7 @@ var AddNewUser = func(user User) interface{} {
 	err := db.QueryRow(sqlStatement, user.ID, user.Username, user.Email).Scan(&id)
 	if err != nil {
 		log.Println(err, err.Error())
-		errmessage = append(errmessage, "Failed to add new user")
+		errmessage = append(errmessage, "User with username or email already exist")
 	}
 
 	sqlStatement = `INSERT INTO userspassphrase (user_id, hash_passphrase) VALUES ($1, $2) RETURNING user_id`
@@ -42,7 +83,7 @@ var AddNewUser = func(user User) interface{} {
 	err = db.QueryRow(sqlStatement, user.ID, user.Password).Scan(&id)
 	if err != nil {
 		log.Println(err, err.Error())
-		errmessage = append(errmessage, "Failed to add new user")
+		errmessage = append(errmessage, "Existing user")
 	}
 
 	var result interface{}
@@ -50,9 +91,9 @@ var AddNewUser = func(user User) interface{} {
 	switch {
 	case len(errmessage) == 0:
 		data := User{ID: user.ID, Username: user.Username, Email: user.Email}
-		result = utils.SuccessMessage{Result: "success", Data: data}
+		result = data
 	default:
-		errobj["code"] = 400
+		errobj["code"] = 500
 		errobj["message"] = errmessage
 		result = utils.ErrorMessage{Result: "error", Error: errobj}
 

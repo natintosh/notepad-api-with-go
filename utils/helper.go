@@ -3,7 +3,7 @@ package utils
 import "reflect"
 
 // GetStatusCode :
-func GetStatusCode(result, errorMessage interface{}) (bool, int) {
+func GetStatusCode(result interface{}) (bool, int) {
 	exist := false
 	statusCode := 0
 	if reflect.TypeOf(result) == reflect.TypeOf(ErrorMessage{}) {
